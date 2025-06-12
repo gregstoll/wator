@@ -54,6 +54,9 @@ int NRAND(int n) {
 	std::uniform_int_distribution dist(0, n - 1);
 	return dist(gen);
 }
+int LRAND() {
+	return NRAND(2);
+}
 
 #define MIN(a, b) (std::min(a, b))
 #define MAX(a, b) (std::max(a, b))
@@ -993,7 +996,7 @@ init_wator(int aSize)
 			wp->height = 2;
 		if (size == 0 ||
 		    MINGRIDSIZE * size > wp->width || MINGRIDSIZE * size > wp->height) {
-			if (wp->width > MINGRIDSIZE * icon_width &&
+			/*if (wp->width > MINGRIDSIZE * icon_width &&
 			    wp->height > MINGRIDSIZE * icon_height) {
 				wp->pixelmode = false;
 				wp->xs = icon_width;
@@ -1002,7 +1005,7 @@ init_wator(int aSize)
 				wp->pixelmode = true;
 				wp->xs = wp->ys = MAX(MINSIZE, MIN(wp->width, wp->height) /
 						      MINGRIDSIZE);
-			}
+			}*/
 		} else {
 			wp->pixelmode = true;
 			if (size < -MINSIZE)
@@ -1119,7 +1122,7 @@ init_wator(int aSize)
 					return;
 				}
 				wp->arr[colrow] = wp->currkind;
-				drawcell(mi, col, row,
+				drawcell(col, row,
 					 wp->currkind->info.color, wp->currkind->info.direction, true);
 			}
 		}
@@ -1178,7 +1181,7 @@ draw_wator()
 					wp->currkind->info.col = acell[i].pos % wp->ncols;
 					wp->currkind->info.row = acell[i].pos / wp->ncols;
 					wp->currkind->info.food = wp->sstarve;
-					drawcell(mi, wp->currkind->info.col, wp->currkind->info.row,
+					drawcell(wp->currkind->info.col, wp->currkind->info.row,
 						 wp->currkind->info.color, wp->currkind->info.direction, true);
 					if (++(wp->currkind->info.age) >= wp->breed[wp->kind]) {	/* breed */
 						cutfrom_kindlist(wp);	/* This rotates out who goes first */
@@ -1200,7 +1203,7 @@ draw_wator()
 						wp->nkind[wp->kind]++;
 					} else {
 						wp->arr[colrow] = 0;
-						drawcell(mi, col, row, 0, 0, false);
+						drawcell(col, row, 0, 0, false);
 					}
 				} else {
 					if (wp->currkind->info.food-- < 0) {	/* Time to die, Jaws */
@@ -1208,7 +1211,7 @@ draw_wator()
 						wp->currkind = wp->currkind->previous;
 						removefrom_kindlist(wp, wp->arr[colrow]);
 						wp->arr[colrow] = 0;
-						drawcell(mi, col, row, 0, 0, false);
+						drawcell(col, row, 0, 0, false);
 						wp->nkind[wp->kind]--;
 						numok = -1;	/* Want to escape from next if */
 					}
@@ -1236,7 +1239,7 @@ draw_wator()
 						wp->currkind->info.direction = wp->kind * KINDBITMAPS;
 					wp->currkind->info.col = acell[i].pos % wp->ncols;
 					wp->currkind->info.row = acell[i].pos / wp->ncols;
-					drawcell(mi,
+					drawcell(
 						 wp->currkind->info.col, wp->currkind->info.row,
 						 wp->currkind->info.color, wp->currkind->info.direction, true);
 					if (++(wp->currkind->info.age) >= wp->breed[wp->kind]) {	/* breed */
@@ -1253,14 +1256,14 @@ draw_wator()
 						wp->nkind[wp->kind]++;
 					} else {
 						wp->arr[colrow] = 0;
-						drawcell(mi, col, row, 0, 0, false);
+						drawcell(col, row, 0, 0, false);
 					}
 				} else {
 					/* I'll just sit here and wave my tail so you know I am alive */
 					wp->currkind->info.direction =
 						(wp->currkind->info.direction + ORIENTS) % KINDBITMAPS +
 						wp->kind * KINDBITMAPS;
-					drawcell(mi, col, row, wp->currkind->info.color,
+					drawcell(col, row, wp->currkind->info.color,
 					 wp->currkind->info.direction, true);
 				}
 			}
@@ -1271,8 +1274,12 @@ draw_wator()
 
 	if ((wp->nkind[FISH] >= wp->positions) ||
 	    (!wp->nkind[FISH] && !wp->nkind[SHARK]) ||
-	    wp->generation >= MI_CYCLES(mi)) {
-		init_wator(mi);
+		// TODO??
+	    //wp->generation >= MI_CYCLES(mi)) {
+		false) {
+		// TODO??
+		//init_wator(mi);
+		init_wator(100);
 	}
 	if (wp->kind == SHARK)
 		wp->generation++;
@@ -1281,28 +1288,11 @@ draw_wator()
 ENTRYPOINT void
 release_wator()
 {
-	if (wators != NULL) {
+	//if (wators != NULL) {
 		free_wator_screen(&wators);
-		free(wators);
-		wators = (watorstruct *) NULL;
-	}
+		//free(wators);
+		//wators = (watorstruct *) NULL;
+	//}
 }
-
-#ifndef STANDALONE
-ENTRYPOINT void
-refresh_wator()
-{
-	watorstruct *wp;
-
-	if (wators == NULL)
-		return;
-	wp = &wators;
-
-	if (wp->painted) {
-		//MI_CLEARWINDOW(mi);
-		wp->painted = false;
-	}
-}
-#endif
 
 #endif /* MODE_wator */
