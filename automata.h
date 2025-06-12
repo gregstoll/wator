@@ -15,6 +15,11 @@
  * 17-06-99: Started log. :)
  */
 
+typedef struct XPoint {
+    int x;
+    int y;
+} XPoint;
+
 extern XPoint hexagonUnit[6];
 extern XPoint triangleUnit[2][3];
 extern XPoint pentagonUnit[4][5];

@@ -1,11 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*- */
 /* wator --- Dewdney's Wa-Tor, water torus simulation */
 
-#if 0
-static const char sccsid[] = "@(#)wator.c	5.24 2007/01/18 xlockmore";
-
-#endif
-
 /*-
  * Copyright (c) 1994 by David Bagley.
  *
@@ -32,7 +27,7 @@ static const char sccsid[] = "@(#)wator.c	5.24 2007/01/18 xlockmore";
  *              June 1985) also used life.c as a guide.
  */
 
-#ifdef STANDALONE
+
 #define MODE_wator
 #define DEFAULTS "*delay: 750000 \n" \
 	"*cycles: 32767 \n" \
@@ -42,11 +37,26 @@ static const char sccsid[] = "@(#)wator.c	5.24 2007/01/18 xlockmore";
 # define free_wator 0
 # define reshape_wator 0
 # define wator_handle_event 0
-#include "xlockmore.h"		/* in xscreensaver distribution */
-#else /* STANDALONE */
-#include "xlock.h"		/* in xlockmore distribution */
-#endif /* STANDALONE */
+
+#define ENTRYPOINT
+
+#include <emscripten.h>
+#include <stdlib.h>
+#include <algorithm>
+#include <iostream>
+#include <random>
 #include "automata.h"
+
+std::random_device rd; // Seed generator
+std::mt19937 gen(rd()); // Mersenne Twister engine
+
+int NRAND(int n) {
+	std::uniform_int_distribution dist(0, n - 1);
+	return dist(gen);
+}
+
+#define MIN(a, b) (std::min(a, b))
+#define MAX(a, b) (std::max(a, b))
 
 #ifdef MODE_wator
 
@@ -57,8 +67,10 @@ static const char sccsid[] = "@(#)wator.c	5.24 2007/01/18 xlockmore";
 #define DEF_VERTICAL "False"
 
 static int  neighbors;
-static Bool vertical;
+static bool vertical;
 
+
+#ifdef USE_MODULES
 static XrmOptionDescRec opts[] =
 {
 	{(char *) "-neighbors", (char *) ".wator.neighbors", XrmoptionSepArg, (caddr_t) NULL},
@@ -78,10 +90,9 @@ static OptionStruct desc[] =
 	{(char *) "-/+vertical", (char *) "change orientation for hexagons and triangles"}
 };
 
+
 ENTRYPOINT ModeSpecOpt wator_opts =
 {sizeof opts / sizeof opts[0], opts, sizeof vars / sizeof vars[0], vars, desc};
-
-#ifdef USE_MODULES
 ModStruct   wator_description =
 {"wator", "init_wator", "draw_wator", "release_wator",
  "refresh_wator", "init_wator", (char *) NULL, &wator_opts,
@@ -90,6 +101,7 @@ ModStruct   wator_description =
 
 #endif
 
+/*
 #include "bitmaps/fish-0.xbm"
 #include "bitmaps/fish-1.xbm"
 #include "bitmaps/fish-2.xbm"
@@ -106,6 +118,7 @@ ModStruct   wator_description =
 #include "bitmaps/shark-5.xbm"
 #include "bitmaps/shark-6.xbm"
 #include "bitmaps/shark-7.xbm"
+*/
 
 #define FISH 0
 #define SHARK 1
@@ -118,6 +131,7 @@ ModStruct   wator_description =
 #define MINSIZE 4
 #define NEIGHBORKINDS 6
 
+/*
 static XImage logo[BITMAPS] =
 {
 	{0, 0, 0, XYBitmap, (char *) fish0_bits, LSBFirst, 8, LSBFirst, 8, 1},
@@ -137,6 +151,7 @@ static XImage logo[BITMAPS] =
 	{0, 0, 0, XYBitmap, (char *) shark6_bits, LSBFirst, 8, LSBFirst, 8, 1},
 	{0, 0, 0, XYBitmap, (char *) shark7_bits, LSBFirst, 8, LSBFirst, 8, 1},
 };
+*/
 
 /* Fish and shark data */
 typedef struct {
@@ -152,7 +167,7 @@ typedef struct _CellList {
 } CellList;
 
 typedef struct {
-	Bool        painted, vertical;
+	bool        painted, vertical;
 	int         nkind[KINDS];	/* Number of fish and sharks */
 	int         breed[KINDS];	/* Breeding time of fish and sharks */
 	int         sstarve;	/* Time the sharks starve if they don't find a fish */
@@ -177,8 +192,8 @@ static char plots[NEIGHBORKINDS] =
 	3, 4, 6, 8, 9, 12	/* Neighborhoods */
 };
 
-static watorstruct *wators = (watorstruct *) NULL;
-static int  icon_width, icon_height;
+static watorstruct wators;
+//static int  icon_width, icon_height;
 
 #if 0
 /*-
@@ -211,199 +226,200 @@ drawshape(ModeInfo * mi, int x, int y, int sizex, int sizey,
 #endif
 
 static void
-drawcell(ModeInfo * mi, int col, int row, unsigned long color, int bitmap,
-		Bool alive)
+drawcell(int col, int row, unsigned long color, int bitmap,
+		bool alive)
 {
-	Display    *display = MI_DISPLAY(mi);
+	/*Display    *display = MI_DISPLAY(mi);
 	Window      window = MI_WINDOW(mi);
-	GC          gc = MI_GC(mi);
-	watorstruct *wp = &wators[MI_SCREEN(mi)];
+	GC          gc = MI_GC(mi);*/
+	watorstruct *wp = &wators;
 	unsigned long colour;
 
-	if (!alive)
-		colour = MI_BLACK_PIXEL(mi);
-	else if (MI_NPIXELS(mi) > 2)
-		colour = MI_PIXEL(mi, color);
-	else
-		colour = MI_WHITE_PIXEL(mi);
-	XSetForeground(display, gc, colour);
-	if (wp->neighbors == 6) {
-		int ccol = 2 * col + !(row & 1), crow = 2 * row;
+	// BIG TODO here
+	// if (!alive)
+	// 	colour = MI_BLACK_PIXEL(mi);
+	// else if (MI_NPIXELS(mi) > 2)
+	// 	colour = MI_PIXEL(mi, color);
+	// else
+	// 	colour = MI_WHITE_PIXEL(mi);
+	// XSetForeground(display, gc, colour);
+	// if (wp->neighbors == 6) {
+	// 	int ccol = 2 * col + !(row & 1), crow = 2 * row;
 
-		if (wp->vertical) {
-			wp->shape.hexagon[0].x = wp->xb + ccol * wp->xs;
-			wp->shape.hexagon[0].y = wp->yb + crow * wp->ys;
-		} else {
-			wp->shape.hexagon[0].y = wp->xb + ccol * wp->xs;
-			wp->shape.hexagon[0].x = wp->yb + crow * wp->ys;
-		}
-		if (wp->xs == 1 && wp->ys == 1)
-			XDrawPoint(display, window, gc,
-				wp->shape.hexagon[0].x,
-				wp->shape.hexagon[0].y);
-		else if (bitmap >= KINDBITMAPS || !alive)
-			XFillPolygon(display, window, gc,
-				wp->shape.hexagon, 6,
-				Convex, CoordModePrevious);
-		else {
-			int ix = 0, iy = 0, sx, sy;
+	// 	if (wp->vertical) {
+	// 		wp->shape.hexagon[0].x = wp->xb + ccol * wp->xs;
+	// 		wp->shape.hexagon[0].y = wp->yb + crow * wp->ys;
+	// 	} else {
+	// 		wp->shape.hexagon[0].y = wp->xb + ccol * wp->xs;
+	// 		wp->shape.hexagon[0].x = wp->yb + crow * wp->ys;
+	// 	}
+	// 	if (wp->xs == 1 && wp->ys == 1)
+	// 		XDrawPoint(display, window, gc,
+	// 			wp->shape.hexagon[0].x,
+	// 			wp->shape.hexagon[0].y);
+	// 	else if (bitmap >= KINDBITMAPS || !alive)
+	// 		XFillPolygon(display, window, gc,
+	// 			wp->shape.hexagon, 6,
+	// 			Convex, CoordModePrevious);
+	// 	else {
+	// 		int ix = 0, iy = 0, sx, sy;
 
-			XSetForeground(display, gc, MI_BLACK_PIXEL(mi));
-			XFillPolygon(display, window, gc,
-				wp->shape.hexagon, 6,
-				Convex, CoordModePrevious);
-			XSetForeground(display, gc, colour);
-			if (wp->vertical) {
-				wp->shape.hexagon[0].x -= wp->xs;
-				wp->shape.hexagon[0].y += wp->ys / 4;
-                                sx = 2 * wp->xs - 6;
-                                sy = 2 * wp->ys - 2;
-				if (wp->xs <= 6 || wp->ys <= 2) {
-					ix = 3;
-					iy = 1;
-				} else
-					ix = 5;
-			} else {
-				wp->shape.hexagon[0].y -= wp->xs;
-				wp->shape.hexagon[0].x += wp->ys / 4;
-                                sy = 2 * wp->xs - 6;
-                                sx = 2 * wp->ys - 2;
-				if (wp->xs <= 6 || wp->ys <= 2) {
-					iy = 3;
-					ix = 1;
-				} else
-					iy = 5;
-			}
-			if (wp->xs <= 6 || wp->ys <= 2)
-				XFillRectangle(display, window, gc,
-					wp->shape.hexagon[0].x + ix,
-					wp->shape.hexagon[0].y + iy,
-					wp->xs, wp->ys);
-			else
-				XFillArc(display, window, gc,
-					wp->shape.hexagon[0].x + ix, 
-					wp->shape.hexagon[0].y + iy,
-					sx, sy,
-					0, 23040);
-		}
-	} else if (wp->neighbors == 4 || wp->neighbors == 8) {
-		if (wp->pixelmode) {
-			if (bitmap >= KINDBITMAPS || (wp->xs <= 2 || wp->ys <= 2) || !alive)
-				XFillRectangle(display, window, gc,
-					wp->xb + wp->xs * col,
-					wp->yb + wp->ys * row,
-					wp->xs - (wp->xs > 3),
-					wp->ys - (wp->ys > 3));
-			else {
-				XSetForeground(display, gc, MI_BLACK_PIXEL(mi));
-				XFillRectangle(display, window, gc,
-					wp->xb + wp->xs * col,
-					wp->yb + wp->ys * row,
-					wp->xs, wp->ys);
-				XSetForeground(display, gc, colour);
-				XFillArc(display, window, gc,
-					wp->xb + wp->xs * col,
-					wp->yb + wp->ys * row,
-					wp->xs - 1, wp->ys - 1,
-					0, 23040);
-			}
-		} else
-			(void) XPutImage(display, window, gc,
-				&logo[bitmap], 0, 0,
-				wp->xb + wp->xs * col, wp->yb + wp->ys * row,
-				icon_width, icon_height);
-	} else { /* TRI */
-		int orient = (col + row) % 2;	/* O left 1 right */
-		Bool small = (wp->xs <= 3 || wp->ys <= 3);
-		int ix = 0, iy = 0;
+	// 		XSetForeground(display, gc, MI_BLACK_PIXEL(mi));
+	// 		XFillPolygon(display, window, gc,
+	// 			wp->shape.hexagon, 6,
+	// 			Convex, CoordModePrevious);
+	// 		XSetForeground(display, gc, colour);
+	// 		if (wp->vertical) {
+	// 			wp->shape.hexagon[0].x -= wp->xs;
+	// 			wp->shape.hexagon[0].y += wp->ys / 4;
+    //                             sx = 2 * wp->xs - 6;
+    //                             sy = 2 * wp->ys - 2;
+	// 			if (wp->xs <= 6 || wp->ys <= 2) {
+	// 				ix = 3;
+	// 				iy = 1;
+	// 			} else
+	// 				ix = 5;
+	// 		} else {
+	// 			wp->shape.hexagon[0].y -= wp->xs;
+	// 			wp->shape.hexagon[0].x += wp->ys / 4;
+    //                             sy = 2 * wp->xs - 6;
+    //                             sx = 2 * wp->ys - 2;
+	// 			if (wp->xs <= 6 || wp->ys <= 2) {
+	// 				iy = 3;
+	// 				ix = 1;
+	// 			} else
+	// 				iy = 5;
+	// 		}
+	// 		if (wp->xs <= 6 || wp->ys <= 2)
+	// 			XFillRectangle(display, window, gc,
+	// 				wp->shape.hexagon[0].x + ix,
+	// 				wp->shape.hexagon[0].y + iy,
+	// 				wp->xs, wp->ys);
+	// 		else
+	// 			XFillArc(display, window, gc,
+	// 				wp->shape.hexagon[0].x + ix, 
+	// 				wp->shape.hexagon[0].y + iy,
+	// 				sx, sy,
+	// 				0, 23040);
+	// 	}
+	// } else if (wp->neighbors == 4 || wp->neighbors == 8) {
+	// 	if (wp->pixelmode) {
+	// 		if (bitmap >= KINDBITMAPS || (wp->xs <= 2 || wp->ys <= 2) || !alive)
+	// 			XFillRectangle(display, window, gc,
+	// 				wp->xb + wp->xs * col,
+	// 				wp->yb + wp->ys * row,
+	// 				wp->xs - (wp->xs > 3),
+	// 				wp->ys - (wp->ys > 3));
+	// 		else {
+	// 			XSetForeground(display, gc, MI_BLACK_PIXEL(mi));
+	// 			XFillRectangle(display, window, gc,
+	// 				wp->xb + wp->xs * col,
+	// 				wp->yb + wp->ys * row,
+	// 				wp->xs, wp->ys);
+	// 			XSetForeground(display, gc, colour);
+	// 			XFillArc(display, window, gc,
+	// 				wp->xb + wp->xs * col,
+	// 				wp->yb + wp->ys * row,
+	// 				wp->xs - 1, wp->ys - 1,
+	// 				0, 23040);
+	// 		}
+	// 	} else
+	// 		(void) XPutImage(display, window, gc,
+	// 			&logo[bitmap], 0, 0,
+	// 			wp->xb + wp->xs * col, wp->yb + wp->ys * row,
+	// 			icon_width, icon_height);
+	// } else { /* TRI */
+	// 	int orient = (col + row) % 2;	/* O left 1 right */
+	// 	bool small = (wp->xs <= 3 || wp->ys <= 3);
+	// 	int ix = 0, iy = 0;
 
-		if (wp->vertical) {
-			wp->shape.triangle[orient][0].x = wp->xb + col * wp->xs;
-			wp->shape.triangle[orient][0].y = wp->yb + row * wp->ys;
-			if (small)
-				wp->shape.triangle[orient][0].x +=
-					((orient) ? -1 : 1);
-			else
-				wp->shape.triangle[orient][0].x +=
-					(wp->xs / 2  - 1) * ((orient) ? 1 : -1);
-		} else {
-			wp->shape.triangle[orient][0].y = wp->xb + col * wp->xs;
-			wp->shape.triangle[orient][0].x = wp->yb + row * wp->ys;
-			if (small)
-				wp->shape.triangle[orient][0].y +=
-					((orient) ? -1 : 1);
-			else
-				wp->shape.triangle[orient][0].y +=
-					(wp->xs / 2  - 1) * ((orient) ? 1 : -1);
-		}
-		if (small)
-			XDrawPoint(display, window, gc,
-				wp->shape.triangle[orient][0].x,
-				wp->shape.triangle[orient][0].y);
-		else {
-			if (bitmap >= KINDBITMAPS || !alive)
-				XFillPolygon(display, window, gc,
-					wp->shape.triangle[orient], 3,
-					Convex, CoordModePrevious);
-			else {
-				XSetForeground(display, gc, MI_BLACK_PIXEL(mi));
-				XFillPolygon(display, window, gc,
-					wp->shape.triangle[orient], 3,
-					Convex, CoordModePrevious);
-				XSetForeground(display, gc, colour);
-				if (wp->vertical) {
-					wp->shape.triangle[orient][0].x += -4 * wp->xs / 5 +
-                                        	((orient) ? wp->xs / 3 : 3 * wp->xs / 5);
-                                        wp->shape.triangle[orient][0].y += -wp->ys / 2 + 1;
-					ix = ((orient) ? -wp->xs / 2 : wp->xs / 2);
-				} else {
-					wp->shape.triangle[orient][0].y += -4 * wp->xs / 5 +
-                                        	((orient) ? wp->xs / 3 : 3 * wp->xs / 5);
-                                        wp->shape.triangle[orient][0].x += -wp->ys / 2 + 1;
-					iy = ((orient) ? -wp->xs / 2 : wp->xs / 2);
-				}
-				XFillArc(display, window, gc,
-					wp->shape.triangle[orient][0].x + ix,
-					wp->shape.triangle[orient][0].y + iy,
-					wp->ys - 3, wp->ys - 3,
-					0, 23040);
-			}
-		}
-	}
+	// 	if (wp->vertical) {
+	// 		wp->shape.triangle[orient][0].x = wp->xb + col * wp->xs;
+	// 		wp->shape.triangle[orient][0].y = wp->yb + row * wp->ys;
+	// 		if (small)
+	// 			wp->shape.triangle[orient][0].x +=
+	// 				((orient) ? -1 : 1);
+	// 		else
+	// 			wp->shape.triangle[orient][0].x +=
+	// 				(wp->xs / 2  - 1) * ((orient) ? 1 : -1);
+	// 	} else {
+	// 		wp->shape.triangle[orient][0].y = wp->xb + col * wp->xs;
+	// 		wp->shape.triangle[orient][0].x = wp->yb + row * wp->ys;
+	// 		if (small)
+	// 			wp->shape.triangle[orient][0].y +=
+	// 				((orient) ? -1 : 1);
+	// 		else
+	// 			wp->shape.triangle[orient][0].y +=
+	// 				(wp->xs / 2  - 1) * ((orient) ? 1 : -1);
+	// 	}
+	// 	if (small)
+	// 		XDrawPoint(display, window, gc,
+	// 			wp->shape.triangle[orient][0].x,
+	// 			wp->shape.triangle[orient][0].y);
+	// 	else {
+	// 		if (bitmap >= KINDBITMAPS || !alive)
+	// 			XFillPolygon(display, window, gc,
+	// 				wp->shape.triangle[orient], 3,
+	// 				Convex, CoordModePrevious);
+	// 		else {
+	// 			XSetForeground(display, gc, MI_BLACK_PIXEL(mi));
+	// 			XFillPolygon(display, window, gc,
+	// 				wp->shape.triangle[orient], 3,
+	// 				Convex, CoordModePrevious);
+	// 			XSetForeground(display, gc, colour);
+	// 			if (wp->vertical) {
+	// 				wp->shape.triangle[orient][0].x += -4 * wp->xs / 5 +
+    //                                     	((orient) ? wp->xs / 3 : 3 * wp->xs / 5);
+    //                                     wp->shape.triangle[orient][0].y += -wp->ys / 2 + 1;
+	// 				ix = ((orient) ? -wp->xs / 2 : wp->xs / 2);
+	// 			} else {
+	// 				wp->shape.triangle[orient][0].y += -4 * wp->xs / 5 +
+    //                                     	((orient) ? wp->xs / 3 : 3 * wp->xs / 5);
+    //                                     wp->shape.triangle[orient][0].x += -wp->ys / 2 + 1;
+	// 				iy = ((orient) ? -wp->xs / 2 : wp->xs / 2);
+	// 			}
+	// 			XFillArc(display, window, gc,
+	// 				wp->shape.triangle[orient][0].x + ix,
+	// 				wp->shape.triangle[orient][0].y + iy,
+	// 				wp->ys - 3, wp->ys - 3,
+	// 				0, 23040);
+	// 		}
+	// 	}
+	// }
 }
 
-static Bool
+static bool
 init_kindlist(watorstruct * wp, int kind)
 {
 	/* Waste some space at the beginning and end of list
 	   so we do not have to complicated checks against falling off the ends. */
 	if (((wp->lastkind[kind] = (CellList *) malloc(sizeof (CellList))) ==
-			NULL) ||
+			nullptr) ||
 	    ((wp->firstkind[kind] = (CellList *) malloc(sizeof (CellList))) ==
-			 NULL)) {
-		return False;
+			 nullptr)) {
+		return false;
 	}
 	wp->firstkind[kind]->previous = wp->lastkind[kind]->next =
-		(struct _CellList *) NULL;
+		(struct _CellList *) nullptr;
 	wp->firstkind[kind]->next = wp->lastkind[kind]->previous =
-		(struct _CellList *) NULL;
+		(struct _CellList *) nullptr;
 	wp->firstkind[kind]->next = wp->lastkind[kind];
 	wp->lastkind[kind]->previous = wp->firstkind[kind];
-	return True;
+	return true;
 }
 
-static Bool
+static bool
 addto_kindlist(watorstruct * wp, int kind, cellstruct info)
 {
-	if ((wp->currkind = (CellList *) malloc(sizeof (CellList))) == NULL) {
-		return False;
+	if ((wp->currkind = (CellList *) malloc(sizeof (CellList))) == nullptr) {
+		return false;
 	}
 	wp->lastkind[kind]->previous->next = wp->currkind;
 	wp->currkind->previous = wp->lastkind[kind]->previous;
 	wp->currkind->next = wp->lastkind[kind];
 	wp->lastkind[kind]->previous = wp->currkind;
 	wp->currkind->info = info;
-	return True;
+	return true;
 }
 
 static void
@@ -415,13 +431,13 @@ removefrom_kindlist(watorstruct * wp, CellList * ptr)
 	free(ptr);
 }
 
-static Bool
+static bool
 dupin_kindlist(watorstruct * wp)
 {
 	CellList   *temp;
 
 	if ((temp = (CellList *) malloc(sizeof (CellList))) == NULL) {
-		return False;
+		return false;
 	}
 	temp->previous = wp->babykind;
 	temp->next = wp->babykind->next;
@@ -429,7 +445,7 @@ dupin_kindlist(watorstruct * wp)
 	temp->next->previous = temp;
 	temp->info = wp->babykind->info;
 	wp->babykind = temp;
-	return True;
+	return true;
 }
 
 /*-
@@ -529,7 +545,9 @@ positionOfNeighbor(watorstruct * wp, int n, int col, int row)
 			row = (row + 1 == wp->nrows) ? 0 : row + 1;
 			break;
 		default:
-			(void) fprintf(stderr, "wrong direction %d\n", dir);
+			// TODO
+			break;
+			//(void) fprintf(stderr, "wrong direction %d\n", dir);
 		}
 	} else if (wp->polygon == 3) {
 		if ((col + row) & 1) {	/* right */
@@ -603,8 +621,9 @@ positionOfNeighbor(watorstruct * wp, int n, int col, int row)
 				row = (!row) ? wp->nrows - 1 : row - 1;
 				break;
 			default:
-				(void) fprintf(stderr, "wrong direction %d\n",
-					dir);
+				// TODO
+				break;
+				//(void) fprintf(stderr, "wrong direction %d\n", dir);
 			}
 		} else {	/* left */
 			switch (dir) {
@@ -677,8 +696,9 @@ positionOfNeighbor(watorstruct * wp, int n, int col, int row)
 				row = (row + 1 == wp->nrows) ? 0 : row + 1;
 				break;
 			default:
-				(void) fprintf(stderr, "wrong direction %d\n",
-					dir);
+				// TODO
+				break;
+				//(void) fprintf(stderr, "wrong direction %d\n", dir);
 			}
 		}
 #if 0
@@ -716,8 +736,8 @@ positionOfNeighbor(watorstruct * wp, int n, int col, int row)
 				col = (col == 0) ? wp->ncols - 1 : col - 1;
 				break;
 			default:
-				(void) fprintf(stderr, "wrong direction %d\n",
-					dir);
+				// TODO
+				// (void) fprintf(stderr, "wrong direction %d\n", dir);
 			}
 			break;
 		case 1:
@@ -751,8 +771,8 @@ positionOfNeighbor(watorstruct * wp, int n, int col, int row)
 				col = (col + 1 >= wp->ncols) ? 0 : col + 1;
 				break;
 			default:
-				(void) fprintf(stderr, "wrong direction %d\n",
-					dir);
+			// TODO
+				//(void) fprintf(stderr, "wrong direction %d\n", dir);
 			}
 			break;
 		case 2:
@@ -786,8 +806,8 @@ positionOfNeighbor(watorstruct * wp, int n, int col, int row)
 				row = (row + 1 == wp->nrows) ? 0 : row + 1;
 				break;
 			default:
-				(void) fprintf(stderr, "wrong direction %d\n",
-					dir);
+			// TODO
+				//(void) fprintf(stderr, "wrong direction %d\n", dir);
 			}
 			break;
 		case 3:
@@ -821,13 +841,13 @@ positionOfNeighbor(watorstruct * wp, int n, int col, int row)
 				row = (row == 0) ? wp->nrows - 1 : row - 1;
 				break;
 			default:
-				(void) fprintf(stderr, "wrong direction %d\n",
-					dir);
+			// TODO
+				//(void) fprintf(stderr, "wrong direction %d\n", dir);
 			}
 			break;
 		default:
-			(void) fprintf(stderr, "wrong orient %d\n",
-				orient);
+		// TODO
+			//(void) fprintf(stderr, "wrong orient %d\n", orient);
 		}
 #endif
 	}
@@ -861,20 +881,17 @@ free_wator_screen(watorstruct *wp)
 }
 
 ENTRYPOINT void
-init_wator(ModeInfo * mi)
+init_wator(int aSize)
 {
-	int         size = MI_SIZE(mi);
+	int         size = aSize;
 	int         i, col, row, colrow, kind;
 	cellstruct  info;
-	watorstruct *wp;
-
-	MI_INIT(mi, wators);
-	wp = &wators[MI_SCREEN(mi)];
+	watorstruct *wp = &wators;
 
 	wp->generation = 0;
 	if (!wp->firstkind[0]) {	/* Genesis */
-		icon_width = fish0_width;
-		icon_height = fish0_height;
+		//icon_width = fish0_width;
+		//icon_height = fish0_height;
 		/* Set up what will be a 'triply' linked list.
 		   doubly linked list, doubly linked to an array */
 		for (kind = FISH; kind <= KINDS; kind++)
@@ -882,21 +899,24 @@ init_wator(ModeInfo * mi)
 				free_wator_screen(wp);
 				return;
 			}
-		for (i = 0; i < BITMAPS; i++) {
+		/*for (i = 0; i < BITMAPS; i++) {
 			logo[i].width = icon_width;
 			logo[i].height = icon_height;
 			logo[i].bytes_per_line = (icon_width + 7) / 8;
-		}
+		}*/
 	} else			/* Exterminate all  */
 		for (i = FISH; i <= KINDS; i++)
 			flush_kindlist(wp, i);
-	if (MI_IS_FULLRANDOM(mi)) {
-		wp->vertical = (Bool) (LRAND() & 1);
+	// TODO
+	wp->vertical = false;
+	/*if (MI_IS_FULLRANDOM(mi)) {
+		wp->vertical = (bool) (LRAND() & 1);
 	} else {
 		wp->vertical = vertical;
-        }
-	wp->width = MI_WIDTH(mi);
-	wp->height = MI_HEIGHT(mi);
+	}*/
+	// TODO
+	wp->width = 100;
+	wp->height = 100;
 	if (wp->width < 2)
 		wp->width = 2;
 	if (wp->height < 2)
@@ -923,8 +943,8 @@ init_wator(ModeInfo * mi)
 
 		wp->polygon = 6;
 		if (!wp->vertical) {
-			wp->height = MI_WIDTH(mi);
-			wp->width = MI_HEIGHT(mi);
+			wp->height = 100;
+			wp->width = 100;
 		}
 		if (wp->width < 8)
 			wp->width = 8;
@@ -942,7 +962,7 @@ init_wator(ModeInfo * mi)
 			wp->ys = MIN(size, MAX(MINSIZE, MIN(wp->width, wp->height) /
 					       MINGRIDSIZE));
 		wp->xs = wp->ys;
-		wp->pixelmode = True;
+		wp->pixelmode = true;
 		nccols = MAX(wp->width / wp->xs - 2, 2);
 		ncrows = MAX(wp->height / wp->ys - 1, 4);
 		wp->ncols = nccols / 2;
@@ -975,16 +995,16 @@ init_wator(ModeInfo * mi)
 		    MINGRIDSIZE * size > wp->width || MINGRIDSIZE * size > wp->height) {
 			if (wp->width > MINGRIDSIZE * icon_width &&
 			    wp->height > MINGRIDSIZE * icon_height) {
-				wp->pixelmode = False;
+				wp->pixelmode = false;
 				wp->xs = icon_width;
 				wp->ys = icon_height;
 			} else {
-				wp->pixelmode = True;
+				wp->pixelmode = true;
 				wp->xs = wp->ys = MAX(MINSIZE, MIN(wp->width, wp->height) /
 						      MINGRIDSIZE);
 			}
 		} else {
-			wp->pixelmode = True;
+			wp->pixelmode = true;
 			if (size < -MINSIZE)
 				wp->ys = NRAND(MIN(-size, MAX(MINSIZE, MIN(wp->width, wp->height) /
 				      MINGRIDSIZE)) - MINSIZE + 1) + MINSIZE;
@@ -1004,8 +1024,8 @@ init_wator(ModeInfo * mi)
 
 		wp->polygon = 3;
 		if (!wp->vertical) {
-			wp->height = MI_WIDTH(mi);
-			wp->width = MI_HEIGHT(mi);
+			wp->height = 100;
+			wp->width = 100;
 		}
 		if (wp->width < 2)
 			wp->width = 2;
@@ -1023,7 +1043,7 @@ init_wator(ModeInfo * mi)
 			wp->ys = MIN(size, MAX(MINSIZE, MIN(wp->width, wp->height) /
 					       MINGRIDSIZE));
 		wp->xs = (int) (1.52 * wp->ys);
-		wp->pixelmode = True;
+		wp->pixelmode = true;
 		wp->ncols = (MAX(wp->width / wp->xs - 1, 2) / 2) * 2;
 		wp->nrows = (MAX(wp->height / wp->ys - 1, 2) / 2) * 2;
 		wp->xb = (wp->width - wp->xs * wp->ncols) / 2 + wp->xs / 2;
@@ -1061,7 +1081,8 @@ init_wator(ModeInfo * mi)
 	wp->kind = FISH;
 	if (!wp->nkind[SHARK])
 		wp->nkind[SHARK] = 1;
-	wp->breed[FISH] = MI_COUNT(mi);
+	// TODO - is this right?
+	wp->breed[FISH] = 1; //MI_COUNT(mi);
 	wp->breed[SHARK] = 10;
 	if (wp->breed[FISH] < 1)
 		wp->breed[FISH] = 1;
@@ -1069,8 +1090,9 @@ init_wator(ModeInfo * mi)
 		wp->breed[FISH] = 4;
 	wp->sstarve = 3;
 
-	MI_CLEARWINDOW(mi);
-	wp->painted = False;
+	// TODO
+	//MI_CLEARWINDOW(mi);
+	wp->painted = false;
 
 	for (kind = FISH; kind <= SHARK; kind++) {
 		i = 0;
@@ -1084,10 +1106,12 @@ init_wator(ModeInfo * mi)
 				info.age = NRAND(wp->breed[kind]);
 				info.food = NRAND(wp->sstarve);
 				info.direction = NRAND(KINDBITMAPS) + kind * KINDBITMAPS;
-				if (MI_NPIXELS(mi) > 2)
+				// TODO??
+				info.color = NRAND(2);
+				/*if (MI_NPIXELS(mi) > 2)
 					info.color = NRAND(MI_NPIXELS(mi));
 				else
-					info.color = 0;
+					info.color = 0;*/
 				info.col = col;
 				info.row = row;
 				if (!addto_kindlist(wp, kind, info)) {
@@ -1096,14 +1120,14 @@ init_wator(ModeInfo * mi)
 				}
 				wp->arr[colrow] = wp->currkind;
 				drawcell(mi, col, row,
-					 wp->currkind->info.color, wp->currkind->info.direction, True);
+					 wp->currkind->info.color, wp->currkind->info.direction, true);
 			}
 		}
 	}
 }
 
 ENTRYPOINT void
-draw_wator(ModeInfo * mi)
+draw_wator()
 {
 	int         col, row;
 	int         colrow, cr, position;
@@ -1111,16 +1135,13 @@ draw_wator(ModeInfo * mi)
 	struct {
 		int         pos, dir;
 	} acell[12];
-	watorstruct *wp;
+	watorstruct *wp = &wators;
 
-	if (wators == NULL)
-		return;
-	wp = &wators[MI_SCREEN(mi)];
 	if (wp->arr == NULL)
 		return;
 
-	MI_IS_DRAWN(mi) = True;
-	wp->painted = True;
+	//MI_IS_DRAWN(mi) = true;
+	wp->painted = true;
 	/* Alternate updates, fish and sharks live out of phase with each other */
 	wp->kind = (wp->kind + 1) % KINDS;
 	{
@@ -1158,7 +1179,7 @@ draw_wator(ModeInfo * mi)
 					wp->currkind->info.row = acell[i].pos / wp->ncols;
 					wp->currkind->info.food = wp->sstarve;
 					drawcell(mi, wp->currkind->info.col, wp->currkind->info.row,
-						 wp->currkind->info.color, wp->currkind->info.direction, True);
+						 wp->currkind->info.color, wp->currkind->info.direction, true);
 					if (++(wp->currkind->info.age) >= wp->breed[wp->kind]) {	/* breed */
 						cutfrom_kindlist(wp);	/* This rotates out who goes first */
 						wp->babykind->info.age = 0;
@@ -1179,7 +1200,7 @@ draw_wator(ModeInfo * mi)
 						wp->nkind[wp->kind]++;
 					} else {
 						wp->arr[colrow] = 0;
-						drawcell(mi, col, row, 0, 0, False);
+						drawcell(mi, col, row, 0, 0, false);
 					}
 				} else {
 					if (wp->currkind->info.food-- < 0) {	/* Time to die, Jaws */
@@ -1187,7 +1208,7 @@ draw_wator(ModeInfo * mi)
 						wp->currkind = wp->currkind->previous;
 						removefrom_kindlist(wp, wp->arr[colrow]);
 						wp->arr[colrow] = 0;
-						drawcell(mi, col, row, 0, 0, False);
+						drawcell(mi, col, row, 0, 0, false);
 						wp->nkind[wp->kind]--;
 						numok = -1;	/* Want to escape from next if */
 					}
@@ -1217,7 +1238,7 @@ draw_wator(ModeInfo * mi)
 					wp->currkind->info.row = acell[i].pos / wp->ncols;
 					drawcell(mi,
 						 wp->currkind->info.col, wp->currkind->info.row,
-						 wp->currkind->info.color, wp->currkind->info.direction, True);
+						 wp->currkind->info.color, wp->currkind->info.direction, true);
 					if (++(wp->currkind->info.age) >= wp->breed[wp->kind]) {	/* breed */
 						cutfrom_kindlist(wp);	/* This rotates out who goes first */
 						wp->babykind->info.age = 0;
@@ -1232,7 +1253,7 @@ draw_wator(ModeInfo * mi)
 						wp->nkind[wp->kind]++;
 					} else {
 						wp->arr[colrow] = 0;
-						drawcell(mi, col, row, 0, 0, False);
+						drawcell(mi, col, row, 0, 0, false);
 					}
 				} else {
 					/* I'll just sit here and wave my tail so you know I am alive */
@@ -1240,7 +1261,7 @@ draw_wator(ModeInfo * mi)
 						(wp->currkind->info.direction + ORIENTS) % KINDBITMAPS +
 						wp->kind * KINDBITMAPS;
 					drawcell(mi, col, row, wp->currkind->info.color,
-					 wp->currkind->info.direction, True);
+					 wp->currkind->info.direction, true);
 				}
 			}
 			wp->currkind = wp->currkind->next;
@@ -1258,13 +1279,10 @@ draw_wator(ModeInfo * mi)
 }
 
 ENTRYPOINT void
-release_wator(ModeInfo * mi)
+release_wator()
 {
 	if (wators != NULL) {
-		int         screen;
-
-		for (screen = 0; screen < MI_NUM_SCREENS(mi); screen++)
-			free_wator_screen(&wators[screen]);
+		free_wator_screen(&wators);
 		free(wators);
 		wators = (watorstruct *) NULL;
 	}
@@ -1272,21 +1290,19 @@ release_wator(ModeInfo * mi)
 
 #ifndef STANDALONE
 ENTRYPOINT void
-refresh_wator(ModeInfo * mi)
+refresh_wator()
 {
 	watorstruct *wp;
 
 	if (wators == NULL)
 		return;
-	wp = &wators[MI_SCREEN(mi)];
+	wp = &wators;
 
 	if (wp->painted) {
-		MI_CLEARWINDOW(mi);
-		wp->painted = False;
+		//MI_CLEARWINDOW(mi);
+		wp->painted = false;
 	}
 }
 #endif
-
-XSCREENSAVER_MODULE ("Wator", wator)
 
 #endif /* MODE_wator */
