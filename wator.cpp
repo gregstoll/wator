@@ -1127,7 +1127,8 @@ init_wator(int xSize, int ySize)
 	}
 }
 
-ENTRYPOINT void
+extern "C"
+EMSCRIPTEN_KEEPALIVE void
 draw_wator()
 {
 	int         col, row;

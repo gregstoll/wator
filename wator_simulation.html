@@ -102,9 +102,7 @@ canvas.emscripten { border: 0px none; width: 600px; height: 600px; background-co
     <span id='controls'>
       <span><input type="checkbox" id="resize">Resize canvas</span>
       <span><input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer &nbsp;&nbsp;&nbsp;</span>
-      <span><input type="button" value="Fullscreen" onclick="Module.requestFullscreen(document.getElementById('pointerLock').checked, 
-                                                                                document.getElementById('resize').checked)">
-      </span>
+      <span><input type="button" value="tick" onclick="Module.tick()"></span>
     </span>
 
     <div class="emscripten">
@@ -114,7 +112,6 @@ canvas.emscripten { border: 0px none; width: 600px; height: 600px; background-co
     <div class="emscripten_border">
       <canvas class="emscripten" id="canvas" height="600" width="600" tabindex=-1></canvas>
     </div>
-    <!--<canvas id="canvasTemp" height="10" width="10"></canvas>-->
     <textarea id="output" rows="8"></textarea>
 
     <script type='text/javascript'>

@@ -63,7 +63,7 @@ async onRuntimeInitialized() {
 },
 CELL_SIZE: 40,
 COLOR_NAMES: ['red', 'green', 'blue', 'yellow', 'cyan', 'magenta', 'gray', 'orange'],
-async render() {
+render() {
     let data = this._getCellData();
     const resultView = new Uint8Array(Module.HEAPU8.buffer, data, 15 * 15 * 3);
     /** @type CanvasRenderingContext2D */
@@ -100,6 +100,7 @@ async render() {
             let bitmap = resultView[index+2];
             if (alive) {
                 // https://stackoverflow.com/questions/61337596/html5-canvas-filling-transparent-image-with-color-and-drawing-on-top
+                // TODO - lighten shark color or something?
                 tempCanvasCtx.fillStyle = this.COLOR_NAMES[color];
                 // this is the default value
                 tempCanvasCtx.globalCompositeOperation = "source-over";
@@ -110,7 +111,12 @@ async render() {
             }
         }
     }
-}
+},
+tick() {
+    // does the tick
+    this._draw_wator();
+    this.render();
+},
 };
 Module.setStatus('Downloading...');
 window.onerror = (event) => {
