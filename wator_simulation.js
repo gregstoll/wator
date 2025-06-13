@@ -46,6 +46,7 @@ onRuntimeInitialized() {
     this.render();
 },
 CELL_SIZE: 6,
+COLOR_NAMES: ['red', 'green', 'blue', 'yellow', 'cyan', 'magenta', 'gray', 'orange'],
 render() {
     let data = this._getCellData();
     const resultView = new Uint8Array(Module.HEAPU8.buffer, data, 100 * 100 * 3);
@@ -60,7 +61,7 @@ render() {
             let color = resultView[index+1];
             let bitmap = resultView[index+2];
             if (alive) {
-                ctx.fillStyle = 'green';
+                ctx.fillStyle = this.COLOR_NAMES[color];
                 ctx.fillRect(x * this.CELL_SIZE, y * this.CELL_SIZE, this.CELL_SIZE, this.CELL_SIZE);
             }
         }

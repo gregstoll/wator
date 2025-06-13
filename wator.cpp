@@ -1111,12 +1111,8 @@ init_wator(int xSize, int ySize)
 				info.age = NRAND(wp->breed[kind]);
 				info.food = NRAND(wp->sstarve);
 				info.direction = NRAND(KINDBITMAPS) + kind * KINDBITMAPS;
-				// TODO??
-				info.color = NRAND(2);
-				/*if (MI_NPIXELS(mi) > 2)
-					info.color = NRAND(MI_NPIXELS(mi));
-				else
-					info.color = 0;*/
+				// TODO?
+				info.color = NRAND(8);
 				info.col = col;
 				info.row = row;
 				if (!addto_kindlist(wp, kind, info)) {
