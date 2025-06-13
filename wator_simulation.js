@@ -45,10 +45,14 @@ IMAGES: [],
 initImages() {
     let promises = [];
     if (!this.IMAGES.length) {
-        let img = new Image();
-        this.IMAGES.push(img);
-        promises.push(new Promise(resolve => img.addEventListener('load', () => {resolve();}, {once: true})));
-        img.src = "png/fish-0.png";
+        for (type of ["fish", "shark"]) {
+            for (let i = 0; i < 8; i++) {
+                let img = new Image();
+                this.IMAGES.push(img);
+                promises.push(new Promise(resolve => img.addEventListener('load', () => {resolve();}, {once: true})));
+                img.src = `png/${type}-${i}.png`;
+            }
+        }
     }
     return Promise.all(promises);
 },
@@ -74,7 +78,6 @@ async render() {
     tempCanvas.height = this.CELL_SIZE;
     //let tempCanvas = document.getElementById("canvasTemp");
     let tempCanvasCtx = tempCanvas.getContext('2d');
-    //tempCanvasCtx.scale(this.CELL_SIZE / 20.0, this.CELL_SIZE / 20.0);
     console.log(`img dimensions: ${this.IMAGES[0].width}x${this.IMAGES[0].height}`);
     console.log(`img natural dimensions: ${this.IMAGES[0].naturalWidth}x${this.IMAGES[0].naturalHeight}`);
     console.log(`tempcanvas dimensions: ${tempCanvas.width}x${tempCanvas.height}`);
@@ -102,19 +105,8 @@ async render() {
                 tempCanvasCtx.globalCompositeOperation = "source-over";
                 tempCanvasCtx.fillRect(0, 0, this.CELL_SIZE, this.CELL_SIZE);
                 tempCanvasCtx.globalCompositeOperation = "destination-in";
-                /*const bitmap = await createImageBitmap(this.IMAGES[0], {
-                    resizeWidth: this.CELL_SIZE,
-                    resizeHeight: this.CELL_SIZE,
-                    resizeQuality: 'high'
-                });*/
-                tempCanvasCtx.drawImage(this.IMAGES[0], 0, 0, 20, 20, 0, 0, this.CELL_SIZE, this.CELL_SIZE);
-                //tempCanvasCtx.drawImage(bitmap, 0, 0);
-                tempCanvasCtx.globalCompositeOperation = "source-over";
+                tempCanvasCtx.drawImage(this.IMAGES[bitmap], 0, 0, 20, 20, 0, 0, this.CELL_SIZE, this.CELL_SIZE);
                 ctx.drawImage(tempCanvas, 0, 0, this.CELL_SIZE, this.CELL_SIZE, x * this.CELL_SIZE, y * this.CELL_SIZE, this.CELL_SIZE, this.CELL_SIZE);
-                //bitmap.close();
-                //ctx.drawImage(tempCanvas, x * this.CELL_SIZE, y * this.CELL_SIZE);
-                //ctx.fillStyle = this.COLOR_NAMES[color];
-                //ctx.fillRect(x * this.CELL_SIZE, y * this.CELL_SIZE, this.CELL_SIZE, this.CELL_SIZE);
             }
         }
     }
