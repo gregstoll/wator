@@ -18,15 +18,36 @@ initImages() {
     return Promise.all(promises);
 },
 resultView: undefined,
-startWator() {
+interval: undefined,
+startWator(keepTicking) {
     this._init_wator(15, 15);
     let data = this._getCellData();
     resultView = new Uint8Array(Module.HEAPU8.buffer, data, 15 * 15 * 3);
     this.render();
+    if (this.interval) {
+        clearTimeout(this.interval);
+    }
+    document.getElementById("pause").value = "pause";
+    this.interval = setInterval(() => {
+        this.tick();
+    }, 500);
+},
+pause() {
+    let button = document.getElementById("pause");
+    if (this.interval) {
+        clearTimeout(this.interval);
+        this.interval = undefined;
+        button.value = "play";
+    } else {
+        this.interval = setInterval(() => {
+            this.tick();
+        }, 500);
+        button.value = "pause";
+    }
 },
 async onRuntimeInitialized() {
     await this.initImages();
-    this.startWator();
+    this.startWator(true);
 },
 CELL_SIZE: 40,
 COLOR_NAMES: ['red', 'green', 'blue', 'yellow', 'cyan', 'magenta', 'gray', 'orange'],
@@ -42,12 +63,12 @@ render() {
     tempCanvas.height = this.CELL_SIZE;
     //let tempCanvas = document.getElementById("canvasTemp");
     let tempCanvasCtx = tempCanvas.getContext('2d');
-    console.log(`img dimensions: ${this.IMAGES[0].width}x${this.IMAGES[0].height}`);
+    /*console.log(`img dimensions: ${this.IMAGES[0].width}x${this.IMAGES[0].height}`);
     console.log(`img natural dimensions: ${this.IMAGES[0].naturalWidth}x${this.IMAGES[0].naturalHeight}`);
     console.log(`tempcanvas dimensions: ${tempCanvas.width}x${tempCanvas.height}`);
     console.log(`tempcanvas offset: ${tempCanvas.offsetWidth}x${tempCanvas.offsetHeight}`);
     console.log(`canvas dimensions: ${this.canvas.width}x${this.canvas.height}`);
-    console.log(`canvas offset: ${this.canvas.offsetWidth}x${this.canvas.offsetHeight}`);
+    console.log(`canvas offset: ${this.canvas.offsetWidth}x${this.canvas.offsetHeight}`);*/
     for (let y = 0; y < 15; y++) {
         /*ctx.strokeStyle = 'white';
         ctx.beginPath();
