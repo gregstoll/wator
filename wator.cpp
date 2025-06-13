@@ -228,6 +228,19 @@ drawshape(ModeInfo * mi, int x, int y, int sizex, int sizey,
 }
 #endif
 
+typedef struct CellDataForJS {
+	int8_t alive;
+	int8_t color;
+	int8_t bitmap;
+} CellDataForJS;
+
+CellDataForJS* cellDataForJS = nullptr;
+
+extern "C"
+EMSCRIPTEN_KEEPALIVE int getCellData() {
+	return (int)cellDataForJS;
+}
+
 static void
 drawcell(int col, int row, unsigned long color, int bitmap,
 		bool alive)
@@ -237,6 +250,11 @@ drawcell(int col, int row, unsigned long color, int bitmap,
 	GC          gc = MI_GC(mi);*/
 	watorstruct *wp = &wators;
 	unsigned long colour;
+
+	int index = row * (wators.width / wators.xs) + col;
+	cellDataForJS[index].alive = alive ? 1 : 0;
+	cellDataForJS[index].color = color;
+	cellDataForJS[index].bitmap = bitmap;
 
 	// BIG TODO here
 	// if (!alive)
@@ -885,9 +903,8 @@ free_wator_screen(watorstruct *wp)
 
 extern "C"
 EMSCRIPTEN_KEEPALIVE void
-init_wator(int aSize)
+init_wator(int xSize, int ySize)
 {
-	int         size = aSize;
 	int         i, col, row, colrow, kind;
 	cellstruct  info;
 	watorstruct *wp = &wators;
@@ -919,8 +936,8 @@ init_wator(int aSize)
 		wp->vertical = vertical;
 	}*/
 	// TODO
-	wp->width = 100;
-	wp->height = 100;
+	wp->width = xSize;
+	wp->height = ySize;
 	if (wp->width < 2)
 		wp->width = 2;
 	if (wp->height < 2)
@@ -996,30 +1013,10 @@ init_wator(int aSize)
 			wp->width = 2;
 		if (wp->height < 2)
 			wp->height = 2;
-		if (size == 0 ||
-		    MINGRIDSIZE * size > wp->width || MINGRIDSIZE * size > wp->height) {
-			/*if (wp->width > MINGRIDSIZE * icon_width &&
-			    wp->height > MINGRIDSIZE * icon_height) {
-				wp->pixelmode = false;
-				wp->xs = icon_width;
-				wp->ys = icon_height;
-			} else {
-				wp->pixelmode = true;
-				wp->xs = wp->ys = MAX(MINSIZE, MIN(wp->width, wp->height) /
-						      MINGRIDSIZE);
-			}*/
-		} else {
-			wp->pixelmode = true;
-			if (size < -MINSIZE)
-				wp->ys = NRAND(MIN(-size, MAX(MINSIZE, MIN(wp->width, wp->height) /
-				      MINGRIDSIZE)) - MINSIZE + 1) + MINSIZE;
-			else if (size < MINSIZE)
-				wp->ys = MINSIZE;
-			else
-				wp->ys = MIN(size, MAX(MINSIZE, MIN(wp->width, wp->height) /
-						       MINGRIDSIZE));
-			wp->xs = wp->ys;
-		}
+		wp->pixelmode = true;
+		wp->xs = 1;
+		wp->ys = 1;
+		wp->xs = wp->ys;
 		wp->ncols = MAX(wp->width / wp->xs, 2);
 		wp->nrows = MAX(wp->height / wp->ys, 2);
 		wp->xb = (wp->width - wp->xs * wp->ncols) / 2;
@@ -1080,6 +1077,8 @@ init_wator(int aSize)
 		free_wator_screen(wp);
 		return;
 	}
+	free (cellDataForJS);
+	cellDataForJS = (CellDataForJS*) calloc(xSize * ySize, sizeof(CellDataForJS));
 
 	/* Play G-d with these numbers */
 	wp->nkind[FISH] = wp->positions / 3;
@@ -1277,12 +1276,14 @@ draw_wator()
 
 	if ((wp->nkind[FISH] >= wp->positions) ||
 	    (!wp->nkind[FISH] && !wp->nkind[SHARK]) ||
+		// TODO - return that we're done I guess?
+
 		// TODO??
 	    //wp->generation >= MI_CYCLES(mi)) {
 		false) {
 		// TODO??
 		//init_wator(mi);
-		init_wator(100);
+		//init_wator(100);
 	}
 	if (wp->kind == SHARK)
 		wp->generation++;
