@@ -96,12 +96,9 @@ canvas.emscripten { border: 0px none; width: 600px; height: 600px; background-co
 </style>
   </head>
   <body>
-    <div class="spinner" id='spinner'></div>
-    <div class="emscripten" id="status">Downloading...</div>
-
     <span id='controls'>
-      <span><input type="checkbox" id="resize">Resize canvas</span>
-      <span><input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer &nbsp;&nbsp;&nbsp;</span>
+      <!--<span><input type="checkbox" id="resize">Resize canvas</span>-->
+      <span><input type="button" value="restart" onclick="Module.startWator()"></span>
       <span><input type="button" value="tick" onclick="Module.tick()"></span>
     </span>
 
@@ -112,10 +109,6 @@ canvas.emscripten { border: 0px none; width: 600px; height: 600px; background-co
     <div class="emscripten_border">
       <canvas class="emscripten" id="canvas" height="600" width="600" tabindex=-1></canvas>
     </div>
-    <textarea id="output" rows="8"></textarea>
-
-    <script type='text/javascript'>
-    </script>
     <script type="text/javascript" src="wator_simulation.js"></script>
     <script async type="text/javascript" src="wator.js"></script>
   </body>
