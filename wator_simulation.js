@@ -19,10 +19,14 @@ initImages() {
 },
 resultView: undefined,
 interval: undefined,
+cellCounts: undefined,
 startWator(keepTicking) {
-    this._init_wator(15, 15);
+    this.canvas.height = this.canvas.offsetHeight;
+    this.canvas.width = this.canvas.offsetWidth;
+    this.cellCounts = [Math.floor(this.canvas.width / this.CELL_SIZE), Math.floor(this.canvas.height / this.CELL_SIZE)];
+    this._init_wator(this.cellCounts[0], this.cellCounts[1]);
     let data = this._getCellData();
-    resultView = new Uint8Array(Module.HEAPU8.buffer, data, 15 * 15 * 3);
+    resultView = new Uint8Array(Module.HEAPU8.buffer, data, this.cellCounts[0] * this.cellCounts[1] * 3);
     this.render();
     if (this.interval) {
         clearTimeout(this.interval);
@@ -69,7 +73,7 @@ render() {
     console.log(`tempcanvas offset: ${tempCanvas.offsetWidth}x${tempCanvas.offsetHeight}`);
     console.log(`canvas dimensions: ${this.canvas.width}x${this.canvas.height}`);
     console.log(`canvas offset: ${this.canvas.offsetWidth}x${this.canvas.offsetHeight}`);*/
-    for (let y = 0; y < 15; y++) {
+    for (let y = 0; y < this.cellCounts[1]; y++) {
         /*ctx.strokeStyle = 'white';
         ctx.beginPath();
         ctx.moveTo(0, this.CELL_SIZE*y);
@@ -78,8 +82,8 @@ render() {
         ctx.moveTo(this.CELL_SIZE*y, 0);
         ctx.lineTo(this.CELL_SIZE*y, this.canvas.height);
         ctx.stroke();*/
-        for (let x = 0; x < 15; x++) {
-            let index = (y * 15 + x) * 3;
+        for (let x = 0; x < this.cellCounts[0]; x++) {
+            let index = (y * this.cellCounts[0] + x) * 3;
             let alive = resultView[index];
             let color = resultView[index+1];
             let bitmap = resultView[index+2];
