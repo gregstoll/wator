@@ -883,7 +883,8 @@ free_wator_screen(watorstruct *wp)
 	wp = NULL;
 }
 
-ENTRYPOINT void
+extern "C"
+EMSCRIPTEN_KEEPALIVE void
 init_wator(int aSize)
 {
 	int         size = aSize;
@@ -941,7 +942,7 @@ init_wator(int aSize)
 		}
 	}
 
-	if (wp->neighbors == 6) {
+	/*if (wp->neighbors == 6) {
 		int nccols, ncrows, sides;
 
 		wp->polygon = 6;
@@ -988,7 +989,8 @@ init_wator(int aSize)
 					2) * 4 / 3;
 			}
 		}
-	} else if (wp->neighbors == 4 || wp->neighbors == 8) {
+	}*/
+	if (wp->neighbors == 4 || wp->neighbors == 8) {
 		wp->polygon = 4;
 		if (wp->width < 2)
 			wp->width = 2;
@@ -1022,51 +1024,52 @@ init_wator(int aSize)
 		wp->nrows = MAX(wp->height / wp->ys, 2);
 		wp->xb = (wp->width - wp->xs * wp->ncols) / 2;
 		wp->yb = (wp->height - wp->ys * wp->nrows) / 2;
-	} else {		/* TRI */
-		int orient, sides;
-
-		wp->polygon = 3;
-		if (!wp->vertical) {
-			wp->height = 100;
-			wp->width = 100;
-		}
-		if (wp->width < 2)
-			wp->width = 2;
-		if (wp->height < 2)
-			wp->height = 2;
-		if (size < -MINSIZE)
-			wp->ys = NRAND(MIN(-size, MAX(MINSIZE, MIN(wp->width, wp->height) /
-				      MINGRIDSIZE)) - MINSIZE + 1) + MINSIZE;
-		else if (size < MINSIZE) {
-			if (!size)
-				wp->ys = MAX(MINSIZE, MIN(wp->width, wp->height) / MINGRIDSIZE);
-			else
-				wp->ys = MINSIZE;
-		} else
-			wp->ys = MIN(size, MAX(MINSIZE, MIN(wp->width, wp->height) /
-					       MINGRIDSIZE));
-		wp->xs = (int) (1.52 * wp->ys);
-		wp->pixelmode = true;
-		wp->ncols = (MAX(wp->width / wp->xs - 1, 2) / 2) * 2;
-		wp->nrows = (MAX(wp->height / wp->ys - 1, 2) / 2) * 2;
-		wp->xb = (wp->width - wp->xs * wp->ncols) / 2 + wp->xs / 2;
-		wp->yb = (wp->height - wp->ys * wp->nrows) / 2 + wp->ys / 2;
-		for (orient = 0; orient < 2; orient++) {
-			for (sides = 0; sides < 3; sides++) {
-				if (wp->vertical) {
-					wp->shape.triangle[orient][sides].x =
-						(wp->xs - 2) * triangleUnit[orient][sides].x;
-					wp->shape.triangle[orient][sides].y =
-						(wp->ys - 2) * triangleUnit[orient][sides].y;
-				} else {
-					wp->shape.triangle[orient][sides].y =
-						(wp->xs - 2) * triangleUnit[orient][sides].x;
-					wp->shape.triangle[orient][sides].x =
-						(wp->ys - 2) * triangleUnit[orient][sides].y;
-				}
-			}
-		}
 	}
+	//  else {		/* TRI */
+	// 	int orient, sides;
+
+	// 	wp->polygon = 3;
+	// 	if (!wp->vertical) {
+	// 		wp->height = 100;
+	// 		wp->width = 100;
+	// 	}
+	// 	if (wp->width < 2)
+	// 		wp->width = 2;
+	// 	if (wp->height < 2)
+	// 		wp->height = 2;
+	// 	if (size < -MINSIZE)
+	// 		wp->ys = NRAND(MIN(-size, MAX(MINSIZE, MIN(wp->width, wp->height) /
+	// 			      MINGRIDSIZE)) - MINSIZE + 1) + MINSIZE;
+	// 	else if (size < MINSIZE) {
+	// 		if (!size)
+	// 			wp->ys = MAX(MINSIZE, MIN(wp->width, wp->height) / MINGRIDSIZE);
+	// 		else
+	// 			wp->ys = MINSIZE;
+	// 	} else
+	// 		wp->ys = MIN(size, MAX(MINSIZE, MIN(wp->width, wp->height) /
+	// 				       MINGRIDSIZE));
+	// 	wp->xs = (int) (1.52 * wp->ys);
+	// 	wp->pixelmode = true;
+	// 	wp->ncols = (MAX(wp->width / wp->xs - 1, 2) / 2) * 2;
+	// 	wp->nrows = (MAX(wp->height / wp->ys - 1, 2) / 2) * 2;
+	// 	wp->xb = (wp->width - wp->xs * wp->ncols) / 2 + wp->xs / 2;
+	// 	wp->yb = (wp->height - wp->ys * wp->nrows) / 2 + wp->ys / 2;
+	// 	for (orient = 0; orient < 2; orient++) {
+	// 		for (sides = 0; sides < 3; sides++) {
+	// 			if (wp->vertical) {
+	// 				wp->shape.triangle[orient][sides].x =
+	// 					(wp->xs - 2) * triangleUnit[orient][sides].x;
+	// 				wp->shape.triangle[orient][sides].y =
+	// 					(wp->ys - 2) * triangleUnit[orient][sides].y;
+	// 			} else {
+	// 				wp->shape.triangle[orient][sides].y =
+	// 					(wp->xs - 2) * triangleUnit[orient][sides].x;
+	// 				wp->shape.triangle[orient][sides].x =
+	// 					(wp->ys - 2) * triangleUnit[orient][sides].y;
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	wp->positions = wp->ncols * wp->nrows;
 

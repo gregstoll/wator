@@ -10,6 +10,12 @@ Based on xlockmore-5.83
 - Maintainer: David A. Bagley <bagleyd AT verizon.net>
 - Primary key fingerprint: 1B79 C847 8F23 6DCD ADC0  D6AC CF15 9707 3779 19AE
 
+To build:
+- [Set up the Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)
+- Run `emcc -O3 wator.cpp -o water.html`
+  - (but ignore `wator.html`, instead use `wator_simulation.html`)
+- To emit source maps, run `emcc wator.cpp -o wator.html -gsource-map`
+
 To test locally:
 - Run `python -m http.server`
 - In a web browser, open 127.0.0.1:8000
