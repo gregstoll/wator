@@ -3,7 +3,7 @@ var canvasElement = document.getElementById('canvas');
 SPEEDS = [1000, 750, 500, 250, 0];
 CELL_SIZES = [10, 20, 30, 40, 50, 60, 70];
 ADAPTIVE_SPEED_THRESHOLDS = [200, 1000, 3000];
-COLOR_NAMES = ['red', 'green', 'blue', 'yellow', 'cyan', 'magenta', 'gray', 'orange'];
+COLOR_NAMES = ['orange', '#00ffdd', '#7b68ee', '#ffee15', '#ff796c', '#0000ff', '#b22222', 'rainbow'];
 
 var Module = {
 canvas: canvasElement,
@@ -30,6 +30,32 @@ nextCellSize: CELL_SIZES[3],
 speed: SPEEDS[2],
 generation: 0,
 adaptiveSpeed: false,
+fishGradients: [],
+sharkGradients: [],
+tempCanvas: undefined,
+initGradients() {
+    // name indicates where head is
+    let tempCanvasCtx = this.tempCanvas.getContext('2d');
+    let topRainbowFishGradient = tempCanvasCtx.createLinearGradient(0, 0, 0, this.cellSize);
+    this.addRainbowColorStops(topRainbowFishGradient, true);
+    let bottomRainbowFishGradient = tempCanvasCtx.createLinearGradient(0, this.cellSize, 0, 0);
+    this.addRainbowColorStops(bottomRainbowFishGradient, true);
+    let leftRainbowFishGradient = tempCanvasCtx.createLinearGradient(0, 0, this.cellSize, 0);
+    this.addRainbowColorStops(leftRainbowFishGradient, true);
+    let rightRainbowFishGradient = tempCanvasCtx.createLinearGradient(this.cellSize, 0, 0, 0);
+    this.addRainbowColorStops(rightRainbowFishGradient, true);
+    this.fishGradients = [topRainbowFishGradient, rightRainbowFishGradient, bottomRainbowFishGradient, leftRainbowFishGradient];
+
+    let topRainbowSharkGradient = tempCanvasCtx.createLinearGradient(0, 0, 0, this.cellSize);
+    this.addRainbowColorStops(topRainbowSharkGradient, false);
+    let bottomRainbowSharkGradient = tempCanvasCtx.createLinearGradient(0, this.cellSize, 0, 0);
+    this.addRainbowColorStops(bottomRainbowSharkGradient, false);
+    let leftRainbowSharkGradient = tempCanvasCtx.createLinearGradient(0, 0, this.cellSize, 0);
+    this.addRainbowColorStops(leftRainbowSharkGradient, false);
+    let rightRainbowSharkGradient = tempCanvasCtx.createLinearGradient(this.cellSize, 0, 0, 0);
+    this.addRainbowColorStops(rightRainbowSharkGradient, false);
+    this.sharkGradients = [topRainbowSharkGradient, rightRainbowSharkGradient, bottomRainbowSharkGradient, leftRainbowSharkGradient];
+},
 startWator(keepTicking) {
     this.canvas.height = this.canvas.offsetHeight;
     this.canvas.width = this.canvas.offsetWidth;
@@ -38,6 +64,10 @@ startWator(keepTicking) {
     // TODO - could reseed some random colors or something
     this.cellCounts = [Math.floor(this.canvas.width / this.cellSize), Math.floor(this.canvas.height / this.cellSize)];
     this._init_wator(this.cellCounts[0], this.cellCounts[1]);
+    this.tempCanvas = document.createElement("canvas");
+    this.tempCanvas.width = this.cellSize;
+    this.tempCanvas.height = this.cellSize;
+    this.initGradients();
     let data = this._getCellData();
     resultView = new Uint8Array(Module.HEAPU8.buffer, data, this.cellCounts[0] * this.cellCounts[1] * 3);
     this.render();
@@ -122,6 +152,34 @@ async onRuntimeInitialized() {
     this.initEvents();
     this.startWator(true);
 },
+addRainbowColorStops(gradient, isFish) {
+    if (isFish) {
+        gradient.addColorStop(0, "red");
+        gradient.addColorStop(0.35, "red");
+        gradient.addColorStop(0.43, "gold");
+        gradient.addColorStop(0.51, "yellow");
+        gradient.addColorStop(0.58, "green");
+        gradient.addColorStop(0.65, "blue");
+        gradient.addColorStop(0.73, "purple");
+        gradient.addColorStop(1, "purple");
+    } else {
+        // sigh
+        /*gradient.addColorStop(0.3, "lch(from red calc(l+30) c h)");
+        gradient.addColorStop(0.4, "lch(from gold calc(l+30) c h)");
+        gradient.addColorStop(0.5, "lch(from yellow calc(l+30) c h)");
+        gradient.addColorStop(0.6, "lch(from green calc(l+30) c h)");
+        gradient.addColorStop(0.7, "lch(from blue calc(l+30) c h)");
+        gradient.addColorStop(0.8, "lch(from purple calc(l+30) c h)");*/
+        gradient.addColorStop(0, "crimson");
+        gradient.addColorStop(0.3, "crimson");
+        gradient.addColorStop(0.4, "gold");
+        gradient.addColorStop(0.5, "yellow");
+        gradient.addColorStop(0.6, "lime");
+        gradient.addColorStop(0.7, "aqua");
+        gradient.addColorStop(0.8, "fuchsia");
+        gradient.addColorStop(1, "fuchsia");
+    }
+},
 render() {
     /** @type CanvasRenderingContext2D */
     let ctx = this.canvas.getContext('2d');
@@ -129,11 +187,8 @@ render() {
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    let tempCanvas = document.createElement("canvas");
-    tempCanvas.width = this.cellSize;
-    tempCanvas.height = this.cellSize;
     //let tempCanvas = document.getElementById("canvasTemp");
-    let tempCanvasCtx = tempCanvas.getContext('2d');
+    let tempCanvasCtx = this.tempCanvas.getContext('2d');
     /*console.log(`img dimensions: ${this.IMAGES[0].width}x${this.IMAGES[0].height}`);
     console.log(`img natural dimensions: ${this.IMAGES[0].naturalWidth}x${this.IMAGES[0].naturalHeight}`);
     console.log(`tempcanvas dimensions: ${tempCanvas.width}x${tempCanvas.height}`);
@@ -142,6 +197,7 @@ render() {
     console.log(`canvas offset: ${this.canvas.offsetWidth}x${this.canvas.offsetHeight}`);*/
     let haveFish = false;
     let haveShark = false;
+
     for (let y = 0; y < this.cellCounts[1]; y++) {
         /*ctx.strokeStyle = 'white';
         ctx.beginPath();
@@ -158,17 +214,23 @@ render() {
             let bitmap = resultView[index+2];
             if (alive) {
                 // https://stackoverflow.com/questions/61337596/html5-canvas-filling-transparent-image-with-color-and-drawing-on-top
-                // TODO - lighten shark color or something?
                 let isFish = bitmap < 8;
+                //let isVertical = bitmap % 2 === 0;
+                let orientation = bitmap % 4;
                 if (isFish) { haveFish = true; } else { haveShark = true; }
                 // lighten sharks a bit
-                tempCanvasCtx.fillStyle = isFish ? COLOR_NAMES[color] : `lch(from ${COLOR_NAMES[color]} calc(l + 30) c h)`;
+                let colorName = COLOR_NAMES[color];
+                if (colorName === "rainbow") {
+                    tempCanvasCtx.fillStyle = isFish ? this.fishGradients[orientation] : this.sharkGradients[orientation];
+                } else {
+                    tempCanvasCtx.fillStyle = isFish ? colorName : `lch(from ${colorName} calc(l + 30) c h)`;
+                }
                 // this is the default value
                 tempCanvasCtx.globalCompositeOperation = "source-over";
                 tempCanvasCtx.fillRect(0, 0, this.cellSize, this.cellSize);
                 tempCanvasCtx.globalCompositeOperation = "destination-in";
                 tempCanvasCtx.drawImage(this.IMAGES[bitmap], 0, 0, 20, 20, 0, 0, this.cellSize, this.cellSize);
-                ctx.drawImage(tempCanvas, 0, 0, this.cellSize, this.cellSize, x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
+                ctx.drawImage(this.tempCanvas, 0, 0, this.cellSize, this.cellSize, x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
             }
         }
     }
