@@ -3,7 +3,7 @@ var canvasElement = document.getElementById('canvas');
 SPEEDS = [1000, 750, 500, 250, 0];
 CELL_SIZES = [10, 20, 30, 40, 50, 60, 70];
 ADAPTIVE_SPEED_THRESHOLDS = [200, 1000, 3000];
-COLOR_NAMES = ['red', 'green', 'blue', 'yellow', 'cyan', 'magenta', 'gray', 'orange'],
+COLOR_NAMES = ['red', 'green', 'blue', 'yellow', 'cyan', 'magenta', 'gray', 'orange'];
 
 var Module = {
 canvas: canvasElement,
