@@ -161,7 +161,8 @@ render() {
                 // TODO - lighten shark color or something?
                 let isFish = bitmap < 8;
                 if (isFish) { haveFish = true; } else { haveShark = true; }
-                tempCanvasCtx.fillStyle = COLOR_NAMES[color];
+                // lighten sharks a bit
+                tempCanvasCtx.fillStyle = isFish ? COLOR_NAMES[color] : `lch(from ${COLOR_NAMES[color]} calc(l + 30) c h)`;
                 // this is the default value
                 tempCanvasCtx.globalCompositeOperation = "source-over";
                 tempCanvasCtx.fillRect(0, 0, this.cellSize, this.cellSize);
