@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Wator</title>
     <style>
-    body, html {
+    body, html, .all {
   font-family: arial;
   margin: 0;
   padding: 0;
@@ -23,11 +23,19 @@ canvas.emscripten { border: 0px none; width: 100%; height: 100%; background-colo
   top: 0;
   right: 0;
   justify-content: flex-end;
+  align-content: end;
   /*width: auto;*/
   /*float: right;*/
   /*vertical-align: top;*/
   /*margin-top: 30px;
   margin-right: 20px;*/
+}
+#optionsPanel {
+  opacity: 0.8;
+}
+#optionsPanel > div {
+  display: flex;
+  align-content: center;
 }
 
 </style>
@@ -35,12 +43,19 @@ canvas.emscripten { border: 0px none; width: 100%; height: 100%; background-colo
   <body>
     <div id='controls'>
       <!--<span><input type="checkbox" id="resize">Resize canvas</span>-->
-      <span><input type="button" value="restart" onclick="Module.startWator(true)"></span>
-      <span><input type="button" id="pause" value="pause" onclick="Module.pause()"></span>
+      <span><input type="button" id="restart" value="restart"></span>
+      <span><input type="button" id="pause" value="pause"></span>
+      <span><input type="button" value="options" popovertarget="optionsPanel"></span>
+      <div id="optionsPanel" popover>
+        <div><label for="speed">Speed: </label><input type="range" id="speed" min="0" max="4"></div>
+        <div><label for="cellSize" title="Takes effect after restart">(?) Cell size: </label><input type="range" id="cellSize" min="0" max="6"></div>
+        <div><label for="adaptiveSpeed" title="Speeds up as generation number grows">(?) Adaptive speed: </label><input type="checkbox" id="adaptiveSpeed"></div>
+        <div>Generation number: <span id="generation"></span></div>
+      </div>
       <!--<span><input type="button" value="tick" onclick="Module.tick()"></span>-->
     </div>
 
-    <div>
+    <div class="all">
       <canvas class="emscripten" id="canvas" tabindex=-1></canvas>
     </div>
 
