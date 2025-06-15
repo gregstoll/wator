@@ -1,7 +1,8 @@
 # wator
-WebAssembly port of the wator visualization from xlock
+WebAssembly port of the wator visualization from xlock (that itself is based on Dewdney's Wa-Tor, water torus simulation)
 
-That itself is based on Dewdney's Wa-Tor, water torus simulation.
+[Live demo](https://gregstoll.com/wator/)
+[Project writeup](https://gregstoll.wordpress.com/2025/06/14/wa-tor-simulation-watch-the-sharks-eat-the-fish/)
 
 Based on xlockmore-5.83
 - Primary site: https://www.sillycycle.com/xlock
