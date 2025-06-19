@@ -146,6 +146,12 @@ initEvents() {
     this.updateNextCellSize();
     document.getElementById("adaptiveSpeed").addEventListener("change", () => {Module.updateAdaptiveSpeed();});
     this.updateAdaptiveSpeed();
+    document.getElementById("canvas").addEventListener("click", () => {
+        // This should happen automatically but it doesn't work on older
+        // versions of Safari on iOS 17.0-18.2 :-( see
+        // https://bugs.webkit.org/show_bug.cgi?id=267688
+        document.getElementById("optionsPanel").hidePopover();
+    });
 },
 async onRuntimeInitialized() {
     await this.initImages();
