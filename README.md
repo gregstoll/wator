@@ -13,10 +13,10 @@ Based on xlockmore-5.83
 
 To build:
 - [Set up the Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)
-- Run `emcc -O3 wator.cpp -s EXPORTED_RUNTIME_METHODS=HEAPU8 -o water.html`
+- Run `emcc -O3 wator.cpp -s EXPORTED_RUNTIME_METHODS=HEAPU8 -o wator.html`
   - (but ignore `wator.html`, instead use `wator_simulation.html`)
 - To emit source maps, run `emcc wator.cpp -s EXPORTED_RUNTIME_METHODS=HEAPU8 -o wator.html -g -gsource-map`
 
 To test locally:
 - Run `python -m http.server`
-- In a web browser, open 127.0.0.1:8000
+- In a web browser, open http://127.0.0.1:8000/wator_simulation.html
