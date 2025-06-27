@@ -63,7 +63,14 @@ startWator(keepTicking) {
     this.generation = 0;
     // TODO - could reseed some random colors or something
     this.cellCounts = [Math.floor(this.canvas.width / this.cellSize), Math.floor(this.canvas.height / this.cellSize)];
-    this._init_wator(this.cellCounts[0], this.cellCounts[1]);
+    let seed = parseInt(document.getElementById("nextSeed").value, 10);
+    if (seed == 0 || Number.isNaN(seed)) {
+        // losing some precision here, but it's fine
+        seed = Math.floor(Math.random() * 4294967295);
+    }
+    document.getElementById("currentSeed").innerText = seed;
+    document.getElementById("nextSeed").value = "";
+    this._init_wator(this.cellCounts[0], this.cellCounts[1], seed);
     document.getElementById("size").innerHTML = `${this.cellCounts[0]}x${this.cellCounts[1]}`;
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.width = this.cellSize;

@@ -903,11 +903,12 @@ free_wator_screen(watorstruct *wp)
 
 extern "C"
 EMSCRIPTEN_KEEPALIVE void
-init_wator(int xSize, int ySize)
+init_wator(int xSize, int ySize, unsigned int seed)
 {
 	int         i, col, row, colrow, kind;
 	cellstruct  info;
 	watorstruct *wp = &wators;
+	gen.seed(seed);
 
 	wp->generation = 0;
 	if (!wp->firstkind[0]) {	/* Genesis */
