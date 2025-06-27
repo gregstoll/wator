@@ -17,7 +17,15 @@
 .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
 div.emscripten { text-align: center; }
 /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-canvas.emscripten { border: 0px none; width: 100%; height: 100%; background-color: black; }
+canvas.emscripten {
+  border: 0px none;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  /* I'd rather have a semi-transparent cursor, but there's not a good way to set
+     cursor opacity */
+  cursor: none;
+}
 
 #controls {
   display: flex;
