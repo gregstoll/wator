@@ -64,6 +64,7 @@ startWator(keepTicking) {
     // TODO - could reseed some random colors or something
     this.cellCounts = [Math.floor(this.canvas.width / this.cellSize), Math.floor(this.canvas.height / this.cellSize)];
     this._init_wator(this.cellCounts[0], this.cellCounts[1]);
+    document.getElementById("size").innerHTML = `${this.cellCounts[0]}x${this.cellCounts[1]}`;
     this.tempCanvas = document.createElement("canvas");
     this.tempCanvas.width = this.cellSize;
     this.tempCanvas.height = this.cellSize;
